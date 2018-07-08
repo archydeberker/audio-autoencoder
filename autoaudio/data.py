@@ -5,6 +5,8 @@ import numpy as np
 import scipy.io.wavfile as wav
 from keras.preprocessing.sequence import pad_sequences
 
+from autoaudio.utils import audio
+
 
 class AudioCommandDataset():
 
@@ -12,7 +14,7 @@ class AudioCommandDataset():
 
         self.data_path = data_path
         self.batch_size = batch_size
-        self.file_list = self._get_filelist()
+        self.file_list = get_filelist(self.data_path)
 
         self.val_set = self._get_file_paths(text_file='validation_list.txt')
         self.test_set = self._get_file_paths(text_file='testing_list.txt')
@@ -21,16 +23,6 @@ class AudioCommandDataset():
 
         self.output_size = output_size
 
-    def _get_filelist(self):
-
-        file_list = []
-        for folder in os.listdir(self.data_path):
-            if os.path.isdir(os.path.join(self.data_path, folder)) and '_background_noise_' not in folder:
-                for file in glob.glob(os.path.join(self.data_path, folder, '*.wav')):
-
-                    file_list.append(os.path.join(self.data_path, folder, file))
-
-        return file_list
 
     def _get_train_paths(self):
         excluded = self.val_set.union(self.test_set)
@@ -72,3 +64,34 @@ class AudioCommandDataset():
 
             yield self._preprocess_audio_batch(np.asarray(x))
 
+
+def get_filelist(data_path):
+
+    file_list = []
+    for folder in os.listdir(data_path):
+        if os.path.isdir(os.path.join(data_path, folder)) and '_background_noise_' not in folder:
+            for file in glob.glob(os.path.join(data_path, folder, '*.wav')):
+
+                file_list.append(os.path.join(data_path, folder, file))
+
+    return file_list
+
+
+def process_utterance(out_dir, wav_path):
+
+    wav = audio.load_wav(wav_path)
+
+    spectrogram = audio.spectrogram(wav).astype(np.float32)
+    n_frames = spectrogram.shape[1]
+    mel_spectrogram = audio.melspectrogram(wav).astype(np.float32)
+
+    path_pieces = wav_path.split('/')[-2:]
+    base_name = path_pieces[0] + '/' + path_pieces[-1].split('.')[0] + '_%s.npy'
+
+    spectrogram_filename = base_name % 'spec'
+    mel_filename = base_name % 'mel'
+
+    np.save(os.path.join(out_dir, spectrogram_filename), spectrogram.T, allow_pickle=False)
+    np.save(os.path.join(out_dir, mel_filename), mel_spectrogram.T, allow_pickle=False)
+
+    return (spectrogram_filename, mel_filename, n_frames)

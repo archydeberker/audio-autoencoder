@@ -7,6 +7,8 @@ import numpy as np
 import tensorflow as tf
 from scipy import signal
 
+from autoaudio.hparams import hparams
+
 
 def load_wav(path):
     return librosa.core.load(path, sr=hparams.sample_rate)[0]
