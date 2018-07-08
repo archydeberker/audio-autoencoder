@@ -33,3 +33,9 @@ def test_length_of_batch_is_constant():
         assert batch.shape[1] == 16000
 
 
+def test_files_are_disjoint_given_disjoint_ids():
+
+    assert len(set(set_1).union(set_2)) is 0
+
+
+

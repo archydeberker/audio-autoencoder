@@ -13,6 +13,12 @@ class AudioCommandDataset():
         self.data_path = data_path
         self.batch_size = batch_size
         self.file_list = self._get_filelist()
+
+        self.val_set = self._get_file_paths(text_file='validation_list.txt')
+        self.test_set = self._get_file_paths(text_file='testing_list.txt')
+
+        self.train_set = self._get_train_paths()
+
         self.output_size = output_size
 
     def _get_filelist(self):
@@ -25,6 +31,19 @@ class AudioCommandDataset():
                     file_list.append(os.path.join(self.data_path, folder, file))
 
         return file_list
+
+    def _get_train_paths(self):
+        excluded = self.val_set.union(self.test_set)
+        return set(self.file_list).difference(excluded)
+
+    def _get_file_paths(self, text_file='validation_list.txt'):
+        with open(os.path.join(self.data_path, text_file)) as f:
+            file_list = f.read()
+
+        return set(file_list)
+
+    def _path_in_list(self):
+
 
     def _random_filename(self):
 
@@ -41,7 +60,7 @@ class AudioCommandDataset():
 
         return pad_sequences(audio_batch, maxlen=self.output_size)
 
-    def get_batch(self):
+    def get_batch(self, ids):
 
         while True:
             x = []
