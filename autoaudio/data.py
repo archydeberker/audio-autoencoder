@@ -25,7 +25,7 @@ class AudioCommandDataset():
 
     def _get_train_paths(self):
         excluded = self.val_set.union(self.test_set)
-        return set(self.file_list).difference(excluded)
+        return set([strip_suffix(f) for f in self.file_list]).difference(excluded)
 
     def _get_file_paths(self, text_file='validation_list.txt'):
         with open(os.path.join(self.data_path, text_file)) as f:
@@ -34,27 +34,15 @@ class AudioCommandDataset():
         file_list = [os.path.join(self.data_path, f).rstrip() for f in file_list]
 
         # Strip file suffixes to allow us to compare these lists to pre-processed data
-        file_list = [self._strip_suffix(f) for f in file_list]
+        file_list = [strip_suffix(f) for f in file_list]
 
         return set(file_list)
 
-    @staticmethod
-    def _strip_suffix(path):
-        """ Strips the suffixes introduced by pre-processing, to allow us to compare
-        file paths to the validation and test set lists.
-        """
-
-        suffixes = ['.wav', '.npy', 'spec', 'mel']
-
-        path_components = path.split('_')
-
-        return '_'.join([p for p in path_components if p not in suffixes])
-
     def _random_filename(self, path_set):
 
-        file_name = self._strip_suffix(np.random.choice(self.file_list))
-        while file_name not in path_set:
-            file_name = self._strip_suffix(np.random.choice(self.file_list))
+        file_name = np.random.choice(self.file_list)
+        while strip_suffix(file_name) not in path_set:
+            file_name = np.random.choice(self.file_list)
 
         return file_name
 
@@ -65,7 +53,7 @@ class AudioCommandDataset():
             for i in range(self.batch_size):
                 x.append(np.load(self._random_filename(path_set)))
 
-            yield np.asarray(x)
+            yield pad_batch(x)
 
 
 def get_filelist(data_path, suffix='.wav'):
@@ -100,3 +88,34 @@ def process_utterance(out_dir, wav_path):
     np.save(os.path.join(out_dir, mel_filename), mel_spectrogram.T, allow_pickle=False)
 
     return (spectrogram_filename, mel_filename, n_frames)
+
+
+def pad_batch(batch):
+    """ Pad all members of a batch (n_samples x timesteps x features) so that
+    they have the same number of timesteps."""
+
+    max_timesteps = 0
+    for b in batch:
+        max_timesteps = max((b.shape[0], max_timesteps))
+
+    padded_batch = []
+    for b in batch:
+        if b.shape[0] < max_timesteps:
+            padded_b = np.pad(b, ((0, max_timesteps - b.shape[0]), (0, 0)), mode='constant')
+            padded_batch.append(padded_b)
+        else:
+            padded_batch.append(b)
+
+    return np.asarray(padded_batch)
+
+
+def strip_suffix(path):
+    """ Strips the suffixes introduced by pre-processing, to allow us to compare
+    file paths to the validation and test set lists.
+    """
+
+    suffixes = ['wav', 'npy', 'spec', 'mel']
+
+    path_components = path.replace('.', '_').split('_')
+
+    return '_'.join([p for p in path_components if p not in suffixes])

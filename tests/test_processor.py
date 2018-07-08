@@ -1,9 +1,8 @@
 import numpy as np
-import pytest
 
-from data import AudioCommandDataset
+from data import AudioCommandDataset, pad_batch, strip_suffix
 
-data_path = '/Users/archy/Downloads/speech_commands_v0.01'
+data_path = '/Users/archy/Downloads/speech_commands_v0.01_processed'
 
 
 def test_file_list_is_correct_length():
@@ -21,7 +20,7 @@ def test_load_audio_into_numpy():
     assert isinstance(next(batch_getter), np.ndarray)
 
 
-def test_length_of_batch_is_constant():
+def test_number_of_timesteps_in_batch_is_constant():
     """ Nb this is not a guarantee, can only sample so many times"""
 
     batch_size = 10
@@ -30,9 +29,8 @@ def test_length_of_batch_is_constant():
 
     for i in range(100):
         batch = next(batch_getter)
-        print(batch.shape)
+        assert len(batch.shape) is 3
         assert batch.shape[0] == batch_size
-        assert batch.shape[1] == 16000
 
 
 def test_file_sets_are_disjoint_given_disjoint_ids():
@@ -47,7 +45,7 @@ def test_file_sets_are_disjoint_given_disjoint_ids():
 
 def test_random_filename_generator():
 
-    dataset = AudioCommandDataset(data_path, batch_size=1)
+    dataset = AudioCommandDataset(data_path, batch_size=10)
 
     sets = {'train': dataset.train_set,
             'val': dataset.val_set}
@@ -61,11 +59,27 @@ def test_random_filename_generator():
         for i in range(10):
             data[file_set].append(next(batch_getter))
 
-    with pytest.raises(AssertionError):
-        np.testing.assert_almost_equal(data['train'], data['val'])
+
+def test_pad_batch():
+
+    a = np.asarray([[0, 1, 2, 3], [0, 1, 2, 3]])
+    b = np.asarray([[0, 1, 2, 3],  [0, 1, 2, 3], [0, 1, 2, 3]])
+
+    assert a.shape == (2, 4)
+    assert b.shape == (3, 4)
+
+    batch = [a, b]
+
+    padded_batch = pad_batch(batch)
+
+    assert padded_batch.shape[0] == 2
+    assert padded_batch.shape[1] == 3
+    assert padded_batch.shape[2] == 4
 
 
+def test_suffix_removal_for_file_inclusion():
 
+    path1 = 'bed/my_file_0_mel.npy'
+    path2 = 'bed/my_file_0.wav'
 
-
-
+    assert strip_suffix(path1) == strip_suffix(path2)
