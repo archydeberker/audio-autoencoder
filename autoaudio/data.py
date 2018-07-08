@@ -38,16 +38,19 @@ class AudioCommandDataset():
 
     def _get_file_paths(self, text_file='validation_list.txt'):
         with open(os.path.join(self.data_path, text_file)) as f:
-            file_list = f.read()
+            file_list = f.readlines()
 
+        file_list = [os.path.join(self.data_path, f).rstrip() for f in file_list]
         return set(file_list)
 
-    def _path_in_list(self):
+    def _random_filename(self, path_set):
 
+        file_name = np.random.choice(self.file_list)
+        print(file_name)
+        while file_name not in path_set:
+            file_name = np.random.choice(self.file_list)
 
-    def _random_filename(self):
-
-        return np.random.choice(self.file_list)
+        return file_name
 
     @staticmethod
     def load_audio(audio_file):
@@ -60,12 +63,12 @@ class AudioCommandDataset():
 
         return pad_sequences(audio_batch, maxlen=self.output_size)
 
-    def get_batch(self, ids):
+    def get_batch(self, path_set):
 
         while True:
             x = []
             for i in range(self.batch_size):
-                x.append(self.load_audio(self._random_filename()))
+                x.append(self.load_audio(self._random_filename(path_set)))
 
             yield self._preprocess_audio_batch(np.asarray(x))
 
