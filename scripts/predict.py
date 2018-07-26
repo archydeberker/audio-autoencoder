@@ -13,6 +13,7 @@ def plot_spectrogram(x):
     plt.ylabel('Frequency')
 
 
+# TODO: update this to use click
 if __name__ == '__main__':
 
     batch_size = 1
@@ -21,7 +22,7 @@ if __name__ == '__main__':
     print('Loading data')
     test_batch_getter = dataset.get_batch(dataset.test_set)
     print('Loading model')
-    autoencoder = keras.models.load_model('/Users/archy/Dropbox/Code/Python/audio-autoencoder/autoaudio/1531180827/weights.10-0.00.hdf5')
+    autoencoder = keras.models.load_model('/Users/archy/Dropbox/Code/Python/audio-autoencoder/autoaudio/checkpoints/1531180827/weights.10-0.00.hdf5')
 
     plt.figure()
     for i in range(5):
@@ -38,5 +39,4 @@ if __name__ == '__main__':
         plt.title('Reconstructed')
 
     plt.show()
-
 
