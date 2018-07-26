@@ -53,7 +53,7 @@ class AudioCommandDataset():
             for i in range(self.batch_size):
                 x.append(np.load(self._random_filename(path_set)))
 
-            yield pad_batch(x)
+            yield (pad_batch(x), pad_batch(x))
 
 
 def get_filelist(data_path, suffix='.wav'):
@@ -90,13 +90,17 @@ def process_utterance(out_dir, wav_path):
     return (spectrogram_filename, mel_filename, n_frames)
 
 
-def pad_batch(batch):
+def pad_batch(batch, size=128):
     """ Pad all members of a batch (n_samples x timesteps x features) so that
     they have the same number of timesteps."""
 
-    max_timesteps = 0
-    for b in batch:
-        max_timesteps = max((b.shape[0], max_timesteps))
+    if size is None:
+        max_timesteps = 0
+        for b in batch:
+            max_timesteps = max((b.shape[0], max_timesteps))
+    else:
+        max_timesteps = size
+
 
     padded_batch = []
     for b in batch:

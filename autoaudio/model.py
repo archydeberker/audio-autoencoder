@@ -30,20 +30,20 @@ def encoder():
 
 
 def decoder():
-    def decoder(x):
+    def decoder(x, n_output_channels=80):
         x = conv_block(x, ShapeChange=UpSampling1D)
         x = conv_block(x, ShapeChange=UpSampling1D)
         x = conv_block(x, ShapeChange=UpSampling1D)
 
         # Use a depthwise convolution to return something with a single dimension
-        x = SeparableConv1D(filters=1, kernel_size=16, padding='same')(x)
+        x = SeparableConv1D(filters=n_output_channels, kernel_size=16, padding='same')(x)
 
         return x
 
     return decoder
 
 
-def AutoEncoder(input_shape=(16000, 1)):
+def AutoEncoder(input_shape=(None, 80)):
     input = Input(shape=input_shape, name='autoencoder_input')
     encoded = encoder()(input)
     decoded = decoder()(encoded)
@@ -53,8 +53,7 @@ def AutoEncoder(input_shape=(16000, 1)):
 
 if __name__ == '__main__':
 
-    example = np.random.random(16000)
-    example = np.expand_dims(example, axis=1)
+    example = np.random.random((128, 80))
     example = np.expand_dims(example, axis=0)
 
     print(example.shape)
@@ -63,6 +62,9 @@ if __name__ == '__main__':
     autoencoder.compile(optimizer=keras.optimizers.sgd(),
                         loss='mean_squared_error')
 
-    autoencoder.fit([example], [example], epochs=100, verbose=2)
+    autoencoder.fit(np.repeat(example, axis=0),
+                    np.repeat(example, axis=0),
+                    epochs=1000,
+                    verbose=1)
 
     print('done')

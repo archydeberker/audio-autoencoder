@@ -19,17 +19,17 @@ def test_model_summary():
 @pytest.mark.slow
 def test_overfit_on_single_example():
 
-    example = np.random.random(128)
-    example = np.expand_dims(example, axis=1)
+    example = np.random.random((128, 80))
     example = np.expand_dims(example, axis=0)
 
-    print(example.shape)
-
-    autoencoder = AutoEncoder(input_shape=(128, 1))
-    autoencoder.compile(optimizer=keras.optimizers.sgd(),
+    autoencoder = AutoEncoder()
+    autoencoder.compile(optimizer=keras.optimizers.sgd(lr=0.1),
                         loss='mean_squared_error')
 
-    history = autoencoder.fit([example], [example], epochs=1000)
+    history = autoencoder.fit(np.repeat(example, repeats=128, axis=0),
+                              np.repeat(example, repeats=128, axis=0),
+                              epochs=1000,
+                              verbose=2)
 
     assert history.history['loss'][-1] < 0.01
 
